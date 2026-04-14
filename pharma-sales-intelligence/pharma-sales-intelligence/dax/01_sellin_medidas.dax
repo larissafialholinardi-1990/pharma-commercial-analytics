@@ -1,0 +1,46 @@
+-- Pendências: valor pendente de sell-in no mês selecionado
+-- Lógica dual:
+--   Mês vigente → usa fato atual (snapshot mais recente)
+--   Mês passado → usa histórico no ÚLTIMO dia de carga do mês
+--
+-- Padrão crítico: REMOVEFILTERS(data_carga) + KEEPFILTERS(data_carga = ultimo_dia)
+-- Remove o filtro de data para calcular o máximo, depois reaplica
+-- o dia exato — preservando BU, Canal, Produto e demais contextos
+-- Evita inflação por múltiplos snapshots intraday no histórico
+PENDENTE =
+VAR _mes_atual  = MONTH(TODAY())
+VAR _ano_atual  = YEAR(TODAY())
+
+VAR _mes_filtro = SELECTEDVALUE('00_COMUM_DIM_calendario'[Mes])
+VAR _ano_filtro = SELECTEDVALUE('00_COMUM_DIM_calendario'[Ano])
+
+VAR _mes_vigente =
+    _mes_filtro = _mes_atual
+        && _ano_filtro = _ano_atual
+
+-- Último snapshot do mês histórico selecionado (mantém BU/Canal/Produto no contexto)
+VAR _ultimo_dia_hist =
+    CALCULATE(
+        MAX('01_SELLIN_FATO_pendencias_hist'[data_carga]),
+        REMOVEFILTERS('01_SELLIN_FATO_pendencias_hist'[data_carga]),
+        KEEPFILTERS(YEAR('01_SELLIN_FATO_pendencias_hist'[data_carga])  = _ano_filtro),
+        KEEPFILTERS(MONTH('01_SELLIN_FATO_pendencias_hist'[data_carga]) = _mes_filtro)
+    )
+
+RETURN
+SWITCH(
+    SELECTEDVALUE('00_COMUM_DIM_filtro_metricas'[Metrica]),
+    "Preço fábrica (PF)", BLANK(),
+    "Bruto",
+        IF(
+            _mes_vigente,
+            -- Mês vigente: fato atual com contexto normal
+            SUM('01_SELLIN_FATO_pendencias'[vl_pendente]),
+            -- Mês passado: histórico fixado no último dia de carga
+            CALCULATE(
+                SUM('01_SELLIN_FATO_pendencias_hist'[vl_pendente]),
+                REMOVEFILTERS('01_SELLIN_FATO_pendencias_hist'[data_carga]),
+                KEEPFILTERS('01_SELLIN_FATO_pendencias_hist'[data_carga] = _ultimo_dia_hist)
+            )
+        )
+)

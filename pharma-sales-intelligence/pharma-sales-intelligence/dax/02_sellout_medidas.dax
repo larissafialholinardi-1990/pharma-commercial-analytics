@@ -39,3 +39,56 @@ RETURN
         total_mes_anterior,
         BLANK()
     )
+
+-- Projeção do mês corrente baseada em dias úteis realizados
+-- Fonte de referência: data de corte do Close-Up (auditoria externa)
+--
+-- Lógica:
+--   Mês já fechado (anterior ao Close-Up) → retorna realizado direto
+--   Mês corrente → extrapola o realizado proporcionalmente aos dias úteis
+--
+-- Padrão sofisticado: usa dias úteis (não dias corridos) como base de
+-- extrapolação, ancorado na data de corte da auditoria Close-Up —
+-- não em TODAY(). Isso evita distorções em meses com feriados e
+-- garante consistência com a fonte oficial de dados de mercado.
+Projeção calculada mês =
+VAR DataCloseUp   = [Data Close-Up] - 1
+VAR AnoRef        = YEAR(DataCloseUp)
+VAR MesRef        = MONTH(DataCloseUp)
+
+VAR AnoFiltro     = SELECTEDVALUE('00_COMUM_DIM_calendario'[Ano])
+VAR MesFiltro     = SELECTEDVALUE('00_COMUM_DIM_calendario'[Mes])
+
+-- Mês selecionado é anterior ao corte do Close-Up → já está fechado
+VAR MesAnterior =
+    (AnoFiltro < AnoRef) ||
+    (AnoFiltro = AnoRef && MesFiltro < MesRef)
+
+-- Dias úteis já transcorridos até a data de corte
+VAR DiasUteisRealizados =
+    CALCULATE(
+        COUNTROWS('00_COMUM_DIM_calendario'),
+        '00_COMUM_DIM_calendario'[flag_dia_util] = 1,
+        '00_COMUM_DIM_calendario'[Data] <= DataCloseUp,
+        '00_COMUM_DIM_calendario'[Ano]  = AnoRef,
+        '00_COMUM_DIM_calendario'[Mes]  = MesRef
+    )
+
+-- Total de dias úteis do mês de referência
+VAR DiasUteisDoMes =
+    CALCULATE(
+        COUNTROWS('00_COMUM_DIM_calendario'),
+        '00_COMUM_DIM_calendario'[flag_dia_util] = 1,
+        '00_COMUM_DIM_calendario'[Ano] = AnoRef,
+        '00_COMUM_DIM_calendario'[Mes] = MesRef
+    )
+
+-- Taxa diária média baseada nos dias úteis realizados
+VAR ProjecaoDiaria = DIVIDE([02_REALIZADO], DiasUteisRealizados)
+
+RETURN
+    IF(
+        MesAnterior,
+        [02_REALIZADO],            -- mês fechado: retorna realizado
+        ProjecaoDiaria * DiasUteisDoMes  -- mês aberto: extrapola
+    )

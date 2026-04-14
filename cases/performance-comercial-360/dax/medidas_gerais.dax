@@ -1,0 +1,86 @@
+-- ============================================================
+-- MEDIDAS GERAIS — Base do Modelo
+-- Métricas fundamentais usadas como dependência pelas demais medidas
+-- ============================================================
+
+-- Faturamento bruto total (com devoluções)
+Faturamento Total Bruto =
+SUM('FATO_SELLIN'[Vlr Fat Bruto])
+
+-- Faturamento bruto sem devoluções — base de cálculo para % de impostos e abatimentos
+Faturamento Total Bruto (s/dev) =
+SUM('FATO_SELLIN'[Vlr Fat Bruto (s/ Dev)])
+
+-- Faturamento líquido total (após descontos, impostos, abatimentos e devoluções)
+Faturamento Total Líquido =
+SUM('FATO_SELLIN'[Vlr Fat Líquido])
+
+-- Margem líquida como % do preço de tabela
+Margem (%) =
+DIVIDE([Faturamento Total Líquido], [Preco Tabela (R$)])
+
+-- Margem em R$ (equivale ao faturamento líquido neste modelo)
+Margem (R$) =
+[Faturamento Total Líquido]
+
+-- Taxa de devolução como % do faturamento bruto (s/ devoluções)
+Devolução (%) =
+DIVIDE([Devolução (R$)], [Faturamento Total Bruto (s/dev)])
+
+-- Quantidade total faturada
+Qtd Vendida =
+SUM(FATO_SELLIN[Qtd Faturada])
+
+-- Ticket médio por unidade vendida
+Ticket Médio =
+DIVIDE([Faturamento Total Líquido], [Qtd Vendida])
+
+-- Participação percentual do cliente no faturamento total
+-- ALL remove o filtro de cliente para calcular o total geral como denominador
+Participação Cliente (%) =
+DIVIDE(
+    [Faturamento Total Líquido],
+    CALCULATE([Faturamento Total Líquido], ALL('FATO_SELLIN'[Cliente]))
+)
+
+-- Faturamento líquido de vendas com prazo acima de 60 dias
+-- Usado para calcular exposição financeira fora da política comercial
+Fat. Prazos Longos (R$) =
+CALCULATE(
+    [Faturamento Total Líquido],
+    FILTER('FATO_SELLIN', 'FATO_SELLIN'[Prazo Médio de Venda] > 60)
+)
+
+-- Preço médio calculado — filtra apenas SKUs com flag de cálculo ativo
+Preço Médio (R$) =
+CALCULATE(
+    AVERAGE('FATO_SELLIN'[PF Calculado]),
+    FATO_SELLIN[Calcula PF?] = "Sim"
+)
+
+-- Preço médio do ano atual (dinâmico via MAX do calendário)
+Preço Médio (Ano Atual) =
+VAR AnoAtual = MAX(dCalendario[Ano])
+RETURN
+    CALCULATE([Preço Médio (R$)], dCalendario[Ano] = AnoAtual)
+
+-- Preço médio do ano anterior (fixo em 2023 neste modelo)
+Preço Médio (Ano Anterior) =
+VAR AnoAtual = MAX(dCalendario[Ano])
+RETURN
+    CALCULATE([Preço Médio (R$)], dCalendario[Ano] = 2023)
+
+-- Variação percentual do preço médio entre ano atual e anterior
+Variação Preço Médio (%) =
+VAR Atual   = [Preço Médio (Ano Atual)]
+VAR Anterior = [Preço Médio (Ano Anterior)]
+RETURN
+    IF(NOT ISBLANK(Anterior), DIVIDE(Atual - Anterior, Anterior), BLANK())
+
+-- Preço máximo registrado na tabela de fatos
+Preço Máximo (R$) =
+MAX('FATO_SELLIN'[PF Calculado])
+
+-- Preço mínimo registrado na tabela de fatos
+Preço Mínimo (R$) =
+MIN('FATO_SELLIN'[PF Calculado])

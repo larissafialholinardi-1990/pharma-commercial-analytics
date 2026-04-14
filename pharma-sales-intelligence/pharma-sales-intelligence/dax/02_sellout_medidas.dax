@@ -92,3 +92,62 @@ RETURN
         [02_REALIZADO],            -- mês fechado: retorna realizado
         ProjecaoDiaria * DiasUteisDoMes  -- mês aberto: extrapola
     )
+
+-- Data de corte da auditoria Close-Up
+-- Remove todos os filtros de data para capturar o MAX global da tabela diária
+-- Usada como âncora temporal em toda a lógica de projeção
+Data Close-Up =
+CALCULATE(
+    MAX('02_SELLOUT_FATO_diario'[dt_periodo]),
+    REMOVEFILTERS('02_SELLOUT_FATO_diario'[dt_periodo]),
+    REMOVEFILTERS('00_COMUM_DIM_calendario'[MesAno])
+)
+
+-- L3M Ano Anterior com fallback para projeção
+-- Problema: o mês equivalente do ano anterior pode não ter fechado ainda
+-- Solução: detecta se existe realizado no mês AA; se não, substitui
+-- apenas esse mês pela projeção — mantendo os outros 2 meses como realizado
+-- Padrão: comparativo de janela móvel robusto a lag de dados históricos
+Demanda L3M A.A =
+VAR _data_contexto  = MAX('00_COMUM_DIM_calendario'[Data])
+VAR _data_base_aa   = EOMONTH(EDATE(_data_contexto, -12), 0)
+VAR _ano_aa         = YEAR(_data_base_aa)
+VAR _mes_aa         = MONTH(_data_base_aa)
+
+-- Verifica se o mês equivalente do ano anterior já tem dados fechados
+VAR _tem_realizado_mes_aa =
+    CALCULATE(
+        COUNTROWS('02_SELLOUT_FATO_mensal'),
+        REMOVEFILTERS('00_COMUM_DIM_calendario'),
+        '00_COMUM_DIM_calendario'[Ano] = _ano_aa,
+        '00_COMUM_DIM_calendario'[Mes] = _mes_aa
+    ) > 0
+
+-- L3M completo do ano anterior
+VAR _realizado_l3m_aa =
+    CALCULATE(
+        [02_REALIZADO],
+        DATESINPERIOD('00_COMUM_DIM_calendario'[Data], _data_base_aa, -3, MONTH)
+    )
+
+-- L3M do ano anterior sem o último mês (fallback parcial)
+VAR _realizado_l3m_aa_sem_mes =
+    CALCULATE(
+        [02_REALIZADO],
+        DATESINPERIOD('00_COMUM_DIM_calendario'[Data], EOMONTH(_data_base_aa, -1), -3, MONTH)
+    )
+
+-- Projeção do mês equivalente no ano anterior
+VAR _projecao_mes_aa =
+    CALCULATE(
+        [02_PROJETADO],
+        '00_COMUM_DIM_calendario'[Ano] = _ano_aa,
+        '00_COMUM_DIM_calendario'[Mes] = _mes_aa
+    )
+
+RETURN
+    IF(
+        _tem_realizado_mes_aa,
+        _realizado_l3m_aa,                              -- mês fechado: L3M completo
+        _realizado_l3m_aa_sem_mes + _projecao_mes_aa    -- mês aberto: substitui só o mês faltante
+    )

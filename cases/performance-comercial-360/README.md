@@ -70,4 +70,4 @@ Build a complete commercial performance analytics solution covering revenue, mar
 ![Discount Analysis](screenshots/06_descontos.png)
 ![Payment Terms](screenshots/07_prazos.png)
 ![Price Dynamics](screenshots/08_preco_competitividade.png)
-![General Performance](screenshots/09_visao_geral_performance.png)
+![General Performance](screenshots/09_visao_geral_performance.png.png)

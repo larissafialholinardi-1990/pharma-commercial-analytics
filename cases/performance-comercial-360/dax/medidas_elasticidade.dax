@@ -1,0 +1,100 @@
+-- ============================================================
+-- MEDIDAS DE ELASTICIDADE
+-- Análise da relação entre variação de preço e volume vendido
+-- ============================================================
+
+-- Volume total faturado no ano atual (contexto do filtro)
+Volume (Ano Atual) = 
+VAR AnoAtual = MAX(dCalendario[Ano])
+RETURN
+    CALCULATE(
+        SUM('FATO_SELLIN'[Qtd Faturada]),
+        dCalendario[Ano] = AnoAtual
+    )
+
+-- Volume total faturado no ano anterior
+Volume (Ano Anterior) = 
+VAR AnoAtual = MAX(dCalendario[Ano])
+RETURN
+    CALCULATE(
+        SUM('FATO_SELLIN'[Qtd Faturada]),
+        dCalendario[Ano] = (AnoAtual - 1)
+    )
+
+-- Variação percentual de volume entre ano atual e anterior
+Variação Volume (%) = 
+VAR Atual   = [Volume (Ano Atual)]
+VAR Anterior = [Volume (Ano Anterior)]
+RETURN
+    IF(
+        NOT ISBLANK(Anterior),
+        DIVIDE(Atual - Anterior, Anterior),
+        BLANK()
+    )
+
+-- Variação percentual de preço médio entre ano atual e anterior
+Variação Preço (%) = 
+VAR Atual   = [Preço Médio (Ano Atual)]
+VAR Anterior = [Preço Médio (Ano Anterior)]
+RETURN
+    IF(
+        NOT ISBLANK(Anterior),
+        DIVIDE(Atual - Anterior, Anterior),
+        BLANK()
+    )
+
+-- Índice de preço relativo ao primeiro mês da série histórica (base 100)
+Índice de Preço = 
+DIVIDE(
+    [Preço Médio (R$)],
+    CALCULATE([Preço Médio (R$)], FIRSTDATE(dCalendario[Data]))
+) * 100
+
+-- Elasticidade: quanto o volume variou para cada 1% de variação no preço
+Elasticidade Volume × Preço = 
+VAR VarVolume = [Variação Volume (%)]
+VAR VarPreco  = [Variação Preço (%)]
+RETURN
+    IF(
+        NOT ISBLANK(VarPreco) && VarPreco <> 0,
+        DIVIDE(VarVolume, VarPreco),
+        BLANK()
+    )
+
+-- Classificação textual do comportamento de elasticidade por produto
+-- Usa tolerância configurável para evitar falsos positivos em variações mínimas
+Classificação Elasticidade (Texto) = 
+VAR VarPreco  = [Variação Preço (%)]
+VAR VarVolume = [Variação Volume (%)]
+VAR E         = [Elasticidade Volume × Preço]
+VAR Tol       = [_Tolerância (%)]
+RETURN
+SWITCH(
+    TRUE(),
+    -- Sem dados suficientes
+    OR(ISBLANK(VarPreco), ISBLANK(VarVolume)),
+        BLANK(),
+    -- Preço e volume estáveis: produto insensível a preço
+    AND(ABS(VarPreco) <= Tol, ABS(VarVolume) <= Tol),
+        "Insight: Estável / Insensível a preço",
+    -- Preço caiu e volume subiu: promoção funcionou
+    AND(VarPreco < -Tol, VarVolume > Tol),
+        IF(NOT ISBLANK(E) && E <= -1,
+            "Insight: Promo eficaz (demanda ELÁSTICA)",
+            "Insight: Promo eficaz (demanda pouco elástica)"
+        ),
+    -- Preço subiu e volume caiu: impacto do aumento de preço
+    AND(VarPreco > Tol, VarVolume < -Tol),
+        IF(ABS(E) < 1,
+            "Insight: Aumento de preço (queda leve de volume)",
+            "Insight: Aumento de preço (queda forte de volume)"
+        ),
+    -- Preço e volume subiram juntos: força de marca ou mix premium
+    AND(VarPreco > Tol, VarVolume > Tol),
+        "Insight: Brand pull / Mix premium",
+    -- Preço caiu e volume também caiu: desconto não gerou demanda
+    AND(VarPreco < -Tol, VarVolume < -Tol),
+        "Desconto ineficaz",
+    -- Demais cenários
+    "Insight: Indefinido / Misto"
+)

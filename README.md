@@ -1,53 +1,23 @@
-# 📊 Pharma Commercial Analytics
+# 📊 Pharma Analytics Portfolio
 
-End-to-end commercial analytics solution for a multi-business-unit pharmaceutical company, covering sell-out, sell-in, demand planning, quotas, and indirect sales channels.
-
-Built with **Databricks (Spark SQL / Delta Lake)** as the data warehouse and **Power BI** as the BI layer, serving hundreds of users across 4 business units.
+Collection of commercial analytics projects built for the pharmaceutical industry, combining **Databricks (Spark SQL / Delta Lake)**, **Power BI**, and advanced DAX modeling.
 
 ---
 
-## 🏗️ Architecture Overview
-Data Sources (Close-Up, SAP, Internal)
-↓
-Databricks Delta Lake (Bronze → Silver → Gold)
-↓
-Power BI (Import Mode + Incremental Refresh)
-↓
-DashPlan — Commercial Dashboard
+## 🗂️ Projects
 
-## 📦 Business Units Covered
+### 💼 [Pharma Sales Intelligence](./pharma-sales-intelligence/)
+End-to-end commercial analytics platform serving hundreds of users across 4 business units.
+Built with Databricks + Power BI, covering sell-out, sell-in, demand planning, quotas, and indirect sales channels.
 
-| BU | Focus |
-|---|---|
-| BU Prescrição | Prescription drug sell-out & demand |
-| BU Genéricos | Generic drugs commercial performance |
-| BU Oftalmologia | Ophthalmology portfolio |
-| BU Dermatologia | Dermatology & aesthetics |
+**Highlights:** Incremental Refresh via `Value.NativeQuery`, TREATAS for many-to-many resolution, Gold layer architecture, R3M demand measures.
 
 ---
 
-## 🗂️ Repository Structure
-```
-pharma-commercial-analytics/
-│
-├── sql/
-│   ├── gold/          # Delta Lake Gold layer tables
-│   └── views/         # Auxiliary views
-├── dax/
-│   └── measures/      # Power BI DAX measures by domain
-└── docs/
-    └── screenshots/   # Dashboard previews
-```
----
+### 🏆 [Performance Comercial 360°](./cases/performance-comercial-360/)
+Selection case built for a pharmaceutical company, simulating B2B sell-in analytics between distributors and pharmacies.
 
-## 🔑 Key Technical Highlights
-
-- **Incremental Refresh** configured via `RangeStart`/`RangeEnd` parameters with `Value.NativeQuery` against Databricks
-- **Rolling 3-Month Demand (R3M)** measures with YoY comparison
-- **Many-to-many relationship** resolution in indirect sales panel using `TREATAS`
-- **Gold layer architecture** with split fact tables: `fato_sellout_historico_mensal`, `fato_sellout_diario`, `fato_sellout_projecao`
-- **CTE-based deduplication** for PDV/CNPJ panel management across 5 commercial panels
-- **Carry-forward patterns** in DAX for historical pending orders
+**Highlights:** Waterfall Bruto→Líquido, Elasticidade Volume×Preço, narrative analytics via DAX, dynamic ranking with TOPN+SUMX.
 
 ---
 
@@ -58,11 +28,11 @@ pharma-commercial-analytics/
 | Data Warehouse | Databricks / Delta Lake |
 | Query Language | Spark SQL |
 | BI Tool | Power BI (Import Mode) |
+| DAX | Advanced measures & modeling |
 | Data Modeling | Star Schema |
-| Version Control | GitHub |
 
 ---
 
 ## ⚠️ Note on Data
 
-All queries and measures reference anonymized or structural logic only. No real customer, patient, or proprietary commercial data is included in this repository.
+All queries and measures use anonymized or synthetic data only. No real customer, patient, or proprietary commercial data is included.

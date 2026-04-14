@@ -1,0 +1,114 @@
+-- ============================================================
+-- MEDIDAS COMPARATIVAS — Variações Year-over-Year (YoY)
+-- Compara métricas entre 2024 e 2023
+-- Nota: anos fixos no código — adaptar para dinâmico em produção
+-- ============================================================
+
+-- Variação percentual do faturamento líquido vs ano anterior
+FatLiq_Crescimento vs Ano Anterior (%) =
+VAR FaturamentoAtual =
+    CALCULATE(
+        [Faturamento Total Líquido],
+        REMOVEFILTERS('dCalendario'),   -- remove qualquer filtro de data ativo
+        'dCalendario'[Ano] = 2024
+    )
+VAR FaturamentoAnoAnterior =
+    CALCULATE(
+        [Faturamento Total Líquido],
+        REMOVEFILTERS('dCalendario'),
+        'dCalendario'[Ano] = 2023
+    )
+RETURN
+    DIVIDE(FaturamentoAtual - FaturamentoAnoAnterior, FaturamentoAnoAnterior, 0)
+
+-- Variação em pontos percentuais da margem vs ano anterior
+Margem_Crescimento vs Ano Anterior (%) =
+VAR Margem2024 =
+    CALCULATE([Margem (%)], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2024)
+VAR Margem2023 =
+    CALCULATE([Margem (%)], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2023)
+RETURN
+    Margem2024 - Margem2023
+
+-- Variação percentual do ticket médio vs ano anterior
+Ticket_Crescimento vs Ano Anterior (%) =
+VAR TM2024 =
+    CALCULATE([Ticket Médio], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2024)
+VAR TM2023 =
+    CALCULATE([Ticket Médio], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2023)
+RETURN
+    DIVIDE(TM2024 - TM2023, TM2023, 0)
+
+-- Variação em pontos percentuais do desconto comercial vs ano anterior
+Desconto_Crescimento vs Ano Anterior (%) =
+VAR Desconto2024 =
+    CALCULATE([Desconto Comercial (%)], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2024)
+VAR Desconto2023 =
+    CALCULATE([Desconto Comercial (%)], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2023)
+RETURN
+    Desconto2024 - Desconto2023
+
+-- Variação em pontos percentuais da taxa de devolução vs ano anterior
+Dev_Crescimento vs Ano Anterior (%) =
+VAR T2024 =
+    CALCULATE([Devolução (%)], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2024)
+VAR T2023 =
+    CALCULATE([Devolução (%)], REMOVEFILTERS('dCalendario'), 'dCalendario'[Ano] = 2023)
+RETURN
+    T2024 - T2023
+
+-- Variação em R$ do desconto comercial absoluto vs ano anterior
+Variação Desconto (R$) 2024 vs 2023 =
+VAR Vlr2024 =
+    CALCULATE([Desconto Comercial (R$)], REMOVEFILTERS(dCalendario[Ano]), dCalendario[Ano] = 2024)
+VAR Vlr2023 =
+    CALCULATE([Desconto Comercial (R$)], REMOVEFILTERS(dCalendario[Ano]), dCalendario[Ano] = 2023)
+RETURN
+    COALESCE(Vlr2024, 0) - COALESCE(Vlr2023, 0)
+
+-- Variação percentual da margem média ponderada vs ano anterior
+Variação Margem Média Ponderada (%) =
+VAR Margem2024 =
+    CALCULATE([Margem Média Ponderada (%)], ALL(dCalendario), dCalendario[Ano] = 2024)
+VAR Margem2023 =
+    CALCULATE([Margem Média Ponderada (%)], ALL(dCalendario), dCalendario[Ano] = 2023)
+RETURN
+    DIVIDE(Margem2024 - Margem2023, Margem2023)
+
+-- Faturamento líquido acumulado dos Top 10 clientes por ano
+-- Usa TOPN + SUMX para rankear clientes dinamicamente por ano
+-- Padrão avançado: o ranking é recalculado independentemente para cada ano
+Variação % Faturamento Top 10 Clientes =
+VAR FatTop10_2024 =
+    CALCULATE(
+        SUMX(
+            TOPN(
+                10,
+                VALUES('FATO_SELLIN'[Cliente]),
+                CALCULATE(SUM('FATO_SELLIN'[Vlr Fat Líquido]), ALL(dCalendario), dCalendario[Ano] = 2024),
+                DESC
+            ),
+            CALCULATE(SUM('FATO_SELLIN'[Vlr Fat Líquido]), ALL(dCalendario), dCalendario[Ano] = 2024)
+        )
+    )
+VAR FatTop10_2023 =
+    CALCULATE(
+        SUMX(
+            TOPN(
+                10,
+                VALUES('FATO_SELLIN'[Cliente]),
+                CALCULATE(SUM('FATO_SELLIN'[Vlr Fat Líquido]), ALL(dCalendario), dCalendario[Ano] = 2023),
+                DESC
+            ),
+            CALCULATE(SUM('FATO_SELLIN'[Vlr Fat Líquido]), ALL(dCalendario), dCalendario[Ano] = 2023)
+        )
+    )
+RETURN
+    DIVIDE(FatTop10_2024 - FatTop10_2023, FatTop10_2023)
+
+-- Variação percentual de clientes ativos vs ano anterior
+Variação Clientes Ativos (%) =
+VAR C24 = [Clientes Ativos 2024]
+VAR C23 = [Clientes Ativos 2023]
+RETURN
+    DIVIDE(C24 - C23, C23)

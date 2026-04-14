@@ -1,73 +1,73 @@
-# 📊 Performance Comercial 360°
+# Performance Comercial 360
 
-Case desenvolvido para processo seletivo na indústria farmacêutica, simulando dados de sell-in B2B entre distribuidores e farmácias.
+Selection case built for a pharmaceutical company recruitment process, simulating B2B sell-in analytics between distributors and pharmacies.
 
-> ⚠️ Todos os dados são fictícios ou anonimizados. Nomes de clientes e produtos foram substituídos por identificadores genéricos.
-
----
-
-## 🎯 Objetivo
-
-Construir uma solução analítica completa de performance comercial, cobrindo faturamento, margem, descontos, prazos e precificação — com foco em insights acionáveis para a força de vendas.
+> All data is fictional or anonymized. Client and product names have been replaced with generic identifiers.
 
 ---
 
-## 📑 Páginas do Dashboard
+## Objective
 
-| Página | Descrição |
+Build a complete commercial performance analytics solution covering revenue, margin, discounts, payment terms, and pricing — focused on actionable insights for the sales force.
+
+---
+
+## Dashboard Pages
+
+| Page | Description |
 |---|---|
-| Resumo Executivo | KPIs gerais: faturamento líquido, margem, desconto, ticket médio, devolução |
-| Visão por Produtos | Rentabilidade, evolução mensal, top/bottom performers |
-| Detalhe do Produto | Drill-down por produto: mix de clientes, índice de saúde, margem ao longo do tempo |
-| Performance por Cliente | Faturamento, churn, rentabilidade e ranking de crescimento |
-| Análise de Descontos | Correlação desconto x rentabilidade, evolução mensal, matriz cliente x produto |
-| Visão de Prazos | Prazo médio por cliente/produto, impacto financeiro, clientes fora da política |
-| Dinâmica de Preço | Elasticidade volume x preço, variação vs ano anterior, preço médio por produto |
+| Executive Summary | Core KPIs: net revenue, margin, commercial discount, average ticket, return rate |
+| Product Overview | Profitability, monthly trend, top/bottom performers |
+| Product Detail | Drill-down by product: client mix, product health index, margin over time |
+| Client Performance | Revenue, churn, profitability and growth ranking |
+| Discount Analysis | Discount x profitability correlation, monthly trend, client x product matrix |
+| Payment Terms | Average term by client/product, financial impact, clients outside policy |
+| Price Dynamics | Volume x price elasticity, YoY variance, average price by product |
 
 ---
-## 🧠 Padrões DAX Avançados
 
-| Medida | Padrão Utilizado |
+## Advanced DAX Patterns
+
+| Measure | Pattern |
 |---|---|
-| `Elasticidade Volume × Preço` | Classificação dinâmica com 6 cenários via `SWITCH(TRUE())` e tolerância configurável |
-| `Valor Waterfall` | Tabela desconectada `DATATABLE` + `SELECTEDVALUE` + `SWITCH` |
-| `Top Cliente (Maior Desconto)` | Ranking dinâmico via `ADDCOLUMNS` + `SUMMARIZE` + `TOPN` + `MAXX` |
-| `Resumo_Executivo_Texto` | Narrative analytics — insight textual gerado automaticamente via DAX |
-| `Título – Desconto` | UI responsiva ao contexto via `ISFILTERED` + `SELECTEDVALUE` |
-| `Variação % Top 10 Clientes` | `TOPN` dentro de `SUMX` com ano fixo para ranking independente por período |
-| `Cor_Variacao` | Formatação condicional via DAX retornando hex de cor |
+| `Volume x Price Elasticity` | 6-scenario dynamic classification via `SWITCH(TRUE())` with configurable tolerance |
+| `Waterfall Value` | Disconnected `DATATABLE` + `SELECTEDVALUE` + `SWITCH` |
+| `Top Client (Highest Discount)` | Dynamic ranking via `ADDCOLUMNS` + `SUMMARIZE` + `TOPN` + `MAXX` |
+| `Executive Summary Text` | Narrative analytics — executive insight auto-generated via DAX string concatenation |
+| `Discount Page Title` | Context-responsive UI via `ISFILTERED` + `SELECTEDVALUE` |
+| `Top 10 Clients Revenue Variance` | `TOPN` inside `SUMX` with fixed year for independent period ranking |
+| `Variance Color` | Conditional formatting via DAX returning hex color string |
 
 ---
 
-## 🔑 Destaques Técnicos
+## Key Technical Highlights
 
-- Waterfall **Bruto → Líquido** (Devolução, Impostos, Abatimentos)
-- Scatter **Desconto x Rentabilidade** e **Prazo x Rentabilidade** por cliente
-- **Índice de Saúde do Produto** com gauge dinâmico baseado em giro contínuo
-- **Elasticidade Volume x Preço** calculada via DAX
-- Navegação entre páginas com botões customizados
-- Design consistente com identidade visual do cliente
+- Gross to Net Revenue Waterfall (Returns, Taxes, Allowances)
+- Discount x Profitability and Payment Term x Profitability scatter charts by client
+- Product Health Index with dynamic gauge based on continuous sales cycle
+- Volume x Price Elasticity calculated entirely in DAX
+- Custom page navigation with consistent visual identity
 
 ---
 
-## 🛠️ Stack
+## Stack
 
-| Camada | Tecnologia |
+| Layer | Technology |
 |---|---|
 | BI Tool | Power BI Desktop |
-| Linguagem | DAX |
-| Dados | Simulados / Anonimizados |
+| Language | DAX |
+| Data | Simulated / Anonymized |
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 ![Menu](screenshots/01_menu.png)
-![Resumo Executivo](screenshots/02_resumo_executivo.png)
-![Visão por Produtos](screenshots/03_visao_produtos.png)
-![Detalhe do Produto](screenshots/04_detalhe_produto.png)
-![Performance por Cliente](screenshots/05_clientes.png)
-![Análise de Descontos](screenshots/06_descontos.png)
-![Visão de Prazos](screenshots/07_prazos.png)
-![Dinâmica de Preço](screenshots/08_preco_competitividade.png)
-![Visão Geral](screenshots/09_visao_geral_performance.png)
+![Executive Summary](screenshots/02_resumo_executivo.png)
+![Product Overview](screenshots/03_visao_produtos.png)
+![Product Detail](screenshots/04_detalhe_produto.png)
+![Client Performance](screenshots/05_clientes.png)
+![Discount Analysis](screenshots/06_descontos.png)
+![Payment Terms](screenshots/07_prazos.png)
+![Price Dynamics](screenshots/08_preco_competitividade.png)
+![General Performance](screenshots/09_visao_geral_performance.png)

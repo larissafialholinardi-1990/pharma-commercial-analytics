@@ -1,0 +1,69 @@
+-- ============================================================
+-- MEDIDAS DE DESCONTO COMERCIAL
+-- Análise de descontos por cliente, produto e evolução temporal
+-- ============================================================
+
+-- Desconto comercial como % do preço de tabela
+Desconto Comercial (%) =
+DIVIDE([Desconto Comercial (R$)], [Preco Tabela (R$)])
+
+-- Insight textual automático sobre variação de desconto 2024 vs 2023
+-- Mesmo padrão de narrative analytics usado no Resumo Executivo
+Insight Desconto Comercial =
+VAR VlrVar  = [Variação Desconto (R$) 2024 vs 2023]
+VAR PercVar = [Desconto_Crescimento vs Ano Anterior (%)]
+VAR Sinal   = IF(VlrVar > 0, "aumento", "redução")
+RETURN
+    "Em 2024 houve " & Sinal & " de " &
+    FORMAT(ABS(VlrVar), "R$ #,##0") &
+    " (" & FORMAT(ABS(PercVar), "0.0%") &
+    ") em descontos comerciais em relação a 2023."
+
+-- Título dinâmico da página — alterna entre visão geral e detalhe
+-- ISFILTERED detecta se o usuário selecionou um produto específico
+Título – Desconto (simples) =
+VAR Prod = SELECTEDVALUE(FATO_SELLIN[SKU])
+RETURN
+    IF(
+        NOT ISFILTERED(FATO_SELLIN[SKU]),
+        "Visão geral por Produtos",
+        "Visão detalhada do produto: " & COALESCE(Prod, "Vários produtos")
+    )
+
+-- Cliente com maior % de desconto comercial no contexto atual
+-- ADDCOLUMNS + SUMMARIZE + TOPN + MAXX: ranking dinâmico em DAX puro
+Top Cliente (Maior Desconto) =
+VAR TblClientes  =
+    ADDCOLUMNS(
+        SUMMARIZE('FATO_SELLIN', 'FATO_SELLIN'[Cliente]),
+        "@Desconto", [Desconto Comercial (%)]
+    )
+VAR TblSemBranco = FILTER(TblClientes, NOT ISBLANK([@Desconto]))
+VAR TopRow       = TOPN(1, TblSemBranco, [@Desconto], DESC)
+VAR NomeTop      = MAXX(TopRow, 'FATO_SELLIN'[Cliente])
+VAR ValorTop     = MAXX(TopRow, [@Desconto])
+RETURN
+    IF(
+        ISBLANK(ValorTop),
+        BLANK(),
+        NomeTop & "  " & FORMAT(ValorTop, "0.0%")
+    )
+
+-- Produto com maior % de desconto comercial no contexto atual
+-- Mesmo padrão do Top Cliente, aplicado à dimensão SKU
+Top Produto (Maior Desconto) =
+VAR TblProdutos  =
+    ADDCOLUMNS(
+        SUMMARIZE('FATO_SELLIN', 'FATO_SELLIN'[SKU]),
+        "@Desconto", [Desconto Comercial (%)]
+    )
+VAR TblSemBranco = FILTER(TblProdutos, NOT ISBLANK([@Desconto]))
+VAR TopRow       = TOPN(1, TblSemBranco, [@Desconto], DESC)
+VAR NomeTop      = MAXX(TopRow, 'FATO_SELLIN'[SKU])
+VAR ValorTop     = MAXX(TopRow, [@Desconto])
+RETURN
+    IF(
+        ISBLANK(ValorTop),
+        BLANK(),
+        NomeTop & "  " & FORMAT(ValorTop, "0.0%")
+    )
